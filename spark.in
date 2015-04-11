@@ -1,0 +1,32 @@
+// Spark Core Blinds 
+//
+// Author: Garrett Hawes
+// Date: 2014-04-01
+// Spark core code to control blinds by way of a servo driven by the core. Based on work by Justin Wurth.
+
+
+Servo myservo;
+int setState(String command);
+int state=179; // Start at fully closed
+
+void setup(){
+    myservo.attach(A7); 
+    myservo.write(state);
+    Spark.function("setstate", setState);
+    Spark.variable("getstate", &state, INT);
+}
+
+void loop(){
+}
+
+// Spark Core function that sets the servo to the desired angle on a scale from 0 to 99
+// which is mapped to the appropriate angle 
+// @param command a scale from 0 to 99 for servo setting
+// @return the current setting of the servo
+int setState(String command){ 
+    state = command.toInt(); 
+    state = map (state, 0, 99, 0, 179);
+    myservo.write(state);
+    return state;
+}
+
