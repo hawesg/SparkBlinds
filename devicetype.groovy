@@ -3,13 +3,15 @@
 *
 * Author: Garrett Hawes
 * Date: 2014-04-01
-* Device type to control blinds by way of a servo driven by a sparkcore. Based on work by Justin Wurth. 
-* Open closed states are functioning, need to add poling as well as maybe favorites.
+* Device type to control blinds by way of a servo driven by a sparkcore. Based on work by Justin Wurth.
+* TODO: GO through and get the data from settings for open, close and closed threshold 
 */
-
 preferences {
   input("deviceId", "text", title: "Device ID")
   input("token", "text", title: "Access Token")
+  input("openThresh", "text", title: "Open Threshold", defaultValue: 10, required: false, displayDuringSetup: true)
+  input("open", "text", title: "Open", defaultValue: 99, required: false, displayDuringSetup: true)
+  input("closed", "text", title: "Closed", defaultValue: 20, required: false, displayDuringSetup: true)
 }
 // for the UI
 metadata {
@@ -17,6 +19,15 @@ metadata {
   definition (name: "Spark Core Blinds", author: "Garrett Hawes") {
     capability "Switch Level"
     capability "Switch"
+    capability "Refresh"
+    capability "Polling"
+    
+    attribute "openThresh", "string"
+    attribute "open", "string"
+    attribute "closed", "string"
+    
+    command "setLevel"
+    command "getLevel"
   }
   // tile definitions
   tiles {
@@ -42,22 +53,40 @@ def parse(String description) {
   return null
 }
 
-def on() {
-  put'50'
+def on() { 
+  put'20'
   sendEvent(name: 'switch', value: 'on')
 }
 def off() {
   put'99'
   sendEvent(name: 'switch', value: 'off')
 }
-def setLevel(value) {
-  def level = Math.min(value as Integer, 99)
-  put value
+def setLevel(val) {
+  def level = Math.min(val as Integer, 99)
+  if(level>80){
+    sendEvent(name: 'switch', value: 'off')
+  }
+  else{
+    sendEvent(name: 'switch', value: 'on')
+  }
+  put val
 }
-private put(led) {
+
+def getLevel(){ //TODO
+}
+
+def poll() { //TODO
+}
+
+def refresh() { //TODO
+}
+
+private put(level) {
 //Spark Core API Call
+  sendEvent(name:"level",value:level)
+  sendEvent(name:"switch.setLevel",value:level) 
   httpPost(
     uri: "https://api.spark.io/v1/devices/${deviceId}/setstate",
-    body: [access_token: token, command: led],
+    body: [access_token: token, command: level],
   ) {response -> log.debug (response.data)}
 }
