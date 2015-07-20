@@ -4,24 +4,39 @@
 // Date: 2014-04-01
 // Spark core code to control blinds by way of a servo driven by the core. Based on work by Justin Wurth.
 
+#define OPEN 0
+#define CLOSED 150
+
 Servo myservo;
 int servo_pin = A4;
+int switch_pin = A5;
 int setState(String command);
 //int writeMil(String command);
-int state=170;
+int state;
+
+
 void setup(){
-    myservo.attach(servo_pin); 
-    Spark.function("setstate", setState);
-    //Spark.function("writemil", writeMil);
-    Spark.variable("getstate", &state, INT);
-}
-void loop(){
+  myservo.attach(servo_pin); 
+  Spark.function("setstate", setState);
+  //Spark.function("writemil", writeMil);
+  Spark.variable("getstate", &state, INT);
+  state=myservo.read();
+  pinMode(switch_pin,  INPUT_PULLUP);
 }
 
+void loop(){
+  if(!digitalRead(switch_pin)){
+    delay(50);
+    state=(state==0)?CLOSED:OPEN; // Toggle between fully open and closed
+    myservo.write(state);
+    // TODO: Notify Smart things
+  }
+  while(!digitalRead(switch_pin));
+}
 
 int setState(String command){ 
-    state = command.toInt(); //converts command to integer to be used for positional arrangement
-    state = map (state, 0, 99, 0, 159);
-    myservo.write(state);
-    return 1;
+  state = command.toInt(); //converts command to integer to be used for positional arrangement
+  state = map (state, 0, 99, OPEN, CLOSED);
+  myservo.write(state);
+  return 1;
 }
